@@ -1,12 +1,16 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { UsersService } from 'src/users/users.service';
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserDTO } from 'src/dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from 'src/prisma.service';
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
+    private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
   async login(id: number, email: string) {
@@ -15,37 +19,28 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
     };
   }
-  async validateJwt(email: string) {
-    const user = await this.usersService.user({ email });
-    if (user) {
-      return 'You are logged in';
-    }
-    return 'Unauthorized';
-  }
   async validateUser(
     userEmail: string,
     userPassword: string,
-  ): Promise<UserDTO | null> {
-    const user = await this.usersService.user({ email: userEmail });
-    //Checking if a user exists with the particular email submitted
-    if (user) {
-      const checkPassword = await bcrypt.compare(userPassword, user.password);
-      if (checkPassword) {
-        return user;
-      }
-    }
-    return;
-  }
-
-  async register(user: UserDTO): Promise<string> {
-    let newUser = null;
+  ): Promise<UserDTO> {
     try {
-      newUser = await this.usersService.createUser({
-        email: user.email,
-        password: user.password,
+      //Checking if a user exists with the particular email submitted
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: userEmail,
+        },
       });
-      return newUser;
-    } catch (e: unknown) {
+      if (user) {
+        const checkPassword = await bcrypt.compare(userPassword, user.password);
+        if (checkPassword) {
+          return user;
+        } else {
+          throw new UnauthorizedException('Password Does Not Match!');
+        }
+      } else {
+        throw new UnauthorizedException('Incorrect Email!');
+      }
+    } catch (e) {
       throw new InternalServerErrorException(e);
     }
   }
