@@ -1,23 +1,36 @@
 import {
   Injectable,
   InternalServerErrorException,
+  Res,
+  Req,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserDTO } from 'src/dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma.service';
+import { Request, Response } from 'express';
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
-  async login(id: number, email: string) {
-    const payload = { sub: id, email };
-    return {
-      access_token: this.jwtService.sign(payload),
+  async loginUser(
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<Response> {
+    const payload = { sub: req.user['id'], email: req.user['email'] };
+    const jwt = this.jwtService.sign(payload);
+    res.cookie('accessToken', jwt, {
+      expires: new Date(new Date().getTime() + 30 * 1000),
+      sameSite: 'strict',
+      httpOnly: true,
+    });
+    const message = {
+      message: 'Check your cookies',
     };
+    return res.send(message);
   }
   async validateUser(
     userEmail: string,
