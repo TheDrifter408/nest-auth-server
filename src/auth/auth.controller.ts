@@ -1,19 +1,23 @@
-import { Controller, Post, UseGuards, Get, Req, Res } from '@nestjs/common';
+import { Controller, UseGuards, Get, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { GoogleAuthGuard } from './googleAuth.guard';
-import { LocalAuthGuard } from './local-auth.guard';
-import { Request, Response } from 'express';
-import { JwtAuthGuard } from './jwt.guard';
-
+import { Request } from 'express';
+import {
+  LoginServiceController,
+  LoginServiceControllerMethods,
+  Token,
+  UserDto,
+} from 'src/proto/auth';
+import { Observable } from 'rxjs';
 @Controller('auth')
-export class AuthController {
+@LoginServiceControllerMethods()
+export class AuthController implements LoginServiceController {
   constructor(private authService: AuthService) {}
-  @UseGuards(LocalAuthGuard)
-  @Post('login')
-  async login(@Req() req: Request, @Res() res: Response): Promise<Response> {
-    return this.authService.loginUser(req, res);
+  login(request: UserDto): Promise<Token> | Observable<Token> | Token {
+    const token = this.authService.loginUser(request);
+    console.log(token);
+    return token;
   }
-  @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Req() req: Request) {
     return `Hi ${req.user['email']} you are in your profile`;
