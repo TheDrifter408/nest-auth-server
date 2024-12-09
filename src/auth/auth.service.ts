@@ -26,11 +26,7 @@ export class AuthService {
         return {
           token: this.jwtService.sign(data),
         };
-      } else {
-        throw new UnauthorizedException('Incorrect Email OR Password');
       }
-    } else {
-      throw new UnauthorizedException('No User with this email exists');
     }
   }
   async validateUser(userEmail: string, userPassword: string): Promise<User> {
