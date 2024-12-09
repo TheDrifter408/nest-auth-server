@@ -15,7 +15,6 @@ export class AuthController implements LoginServiceController {
   constructor(private authService: AuthService) {}
   login(request: UserDto): Promise<Token> | Observable<Token> | Token {
     const token = this.authService.loginUser(request);
-    console.log(token);
     return token;
   }
   async getProfile(@Req() req: Request) {

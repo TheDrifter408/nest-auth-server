@@ -14,11 +14,24 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
-  loginUser(data: UserDto) {
-    console.log(data);
-    return {
-      token: this.jwtService.sign(data),
-    };
+  async loginUser(data: UserDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: data.email,
+      },
+    });
+    if (user) {
+      const checkPassword = bcrypt.compare(user.password, data.password);
+      if (checkPassword) {
+        return {
+          token: this.jwtService.sign(data),
+        };
+      } else {
+        throw new UnauthorizedException('Incorrect Email OR Password');
+      }
+    } else {
+      throw new UnauthorizedException('No User with this email exists');
+    }
   }
   async validateUser(userEmail: string, userPassword: string): Promise<User> {
     try {
