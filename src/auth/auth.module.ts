@@ -26,6 +26,6 @@ import { JwtModule } from '@nestjs/jwt';
     GoogleStrategy,
   ],
   controllers: [AuthController],
-  exports: [AuthService, JwtModule],
+  exports: [AuthService, JwtModule, PrismaService],
 })
 export class AuthModule {}
